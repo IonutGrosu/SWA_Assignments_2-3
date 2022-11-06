@@ -40,20 +40,16 @@ export function create<T>(
   return {
     width,
     height,
-    tiles: fillBoard(generator, height, width),
+    tiles: [...Array(height)].map((_, row) =>
+      [...Array(width)].map((_, col) => ({
+        value: generator.next(),
+        pos: {
+          row,
+          col,
+        },
+      }))
+    ),
   };
-}
-
-function fillBoard<T>(generator: Generator<T>, width: number, height: number) {
-  return [...Array(height)].map((_, row) =>
-    [...Array(width)].map((_, col) => ({
-      value: generator.next(),
-      pos: {
-        row,
-        col,
-      },
-    }))
-  );
 }
 
 export function piece<T>(board: Board<T>, p: Position): T | undefined {
@@ -64,7 +60,7 @@ export function piece<T>(board: Board<T>, p: Position): T | undefined {
   return undefined;
 }
 
-function isValidPos<T>(board: Board<T>, p: Position) {
+function isValidPos<T>(board: Board<T>, p: Position): boolean {
   if (p.col < 0 || p.row < 0) {
     return false;
   }
@@ -80,11 +76,17 @@ export function canMove<T>(
   board: Board<T>,
   first: Position,
   second: Position
-): boolean {}
+): boolean {
+  return false;
+}
+
+function validateMove<T>(board: Board<T>, first: Position, second: Position) {}
 
 export function move<T>(
   generator: Generator<T>,
   board: Board<T>,
   first: Position,
   second: Position
-): MoveResult<T> {}
+): MoveResult<T> {
+  return undefined;
+}
