@@ -115,11 +115,11 @@ function verifyBoard<T>(
   second: Position
 ): boolean {
   if (first.col === second.col) {
-    return verifyVertical(board, first, second);
+    return verifyVertical(board, first, second).valid;
   }
 
   if (first.row === second.row) {
-    return verifyHorizontal(board, first, second);
+    return verifyHorizontal(board, first, second).valid;
   }
 
   return false;
@@ -138,16 +138,29 @@ function verifyVertical<T>(board: Board<T>, first: Position, second: Position) {
   const firstRowMatches = matchesForRow(board, firstRowIdx, firstPiece);
   const secondRowMatches = matchesForRow(board, secondRowIdx, secondPiece);
 
+  const matches = [
+    colMatches,
+    colMatchesSecondPiece,
+    firstRowMatches,
+    secondRowMatches,
+  ];
+
   if (
     colMatches.length >= 3 ||
     colMatchesSecondPiece.length >= 3 ||
     firstRowMatches.length >= 3 ||
     secondRowMatches.length >= 3
   ) {
-    return true;
+    return {
+      valid: true,
+      matches: matches,
+    };
   }
 
-  return false;
+  return {
+    valid: false,
+    matches: [],
+  };
 }
 
 function verifyHorizontal<T>(
@@ -167,27 +180,40 @@ function verifyHorizontal<T>(
   const firstColMatches = matchesForCol(board, firstColIdx, firstPiece);
   const secondColMatches = matchesForCol(board, secondColIdx, secondPiece);
 
+  const matches = [
+    rowMatches,
+    rowMatchesSecondPiece,
+    firstColMatches,
+    secondColMatches,
+  ];
+
   if (
     rowMatches.length >= 3 ||
     rowMatchesSecondPiece.length >= 3 ||
     firstColMatches.length >= 3 ||
     secondColMatches.length >= 3
   ) {
-    return true;
+    return {
+      valid: true,
+      matches: matches,
+    };
   }
 
-  return false;
+  return {
+    valid: false,
+    matches: matches,
+  };
 }
 
 function matchesForRow<T>(board: Board<T>, rowIdx: number, piece: T) {
-  let positions: Position[] = [];
+  let positions: Piece<T>[] = [];
   const row = board.tiles[rowIdx];
 
-  let temp: Position[] = [];
+  let temp: Piece<T>[] = [];
 
   for (let i = 0; i < row.length; i++) {
     if (row[i].value === piece) {
-      temp.push({ row: rowIdx, col: i });
+      temp.push({ pos: { row: rowIdx, col: i }, value: piece });
     } else {
       temp = [];
     }
@@ -201,14 +227,14 @@ function matchesForRow<T>(board: Board<T>, rowIdx: number, piece: T) {
 }
 
 function matchesForCol<T>(board: Board<T>, colIdx: number, piece: T) {
-  let positions: Position[] = [];
+  let positions: Piece<T>[] = [];
   const column = board.tiles.map((row) => row[colIdx]);
 
-  let temp: Position[] = [];
+  let temp: Piece<T>[] = [];
 
   for (let i = 0; i < column.length; i++) {
     if (column[i].value === piece) {
-      temp.push({ row: i, col: colIdx });
+      temp.push({ pos: { row: i, col: colIdx }, value: piece });
     } else {
       temp = [];
     }
@@ -229,10 +255,12 @@ export function move<T>(
 ): MoveResult<T> {
   if (validateMove(board, first, second)) {
     swap(board, first, second);
+    const effects: Effect<T>[] = [];
+    clearBoard(board, generator, effects);
 
     return {
       board,
-      effects: [],
+      effects,
     };
   }
 
@@ -240,4 +268,134 @@ export function move<T>(
     board,
     effects: [],
   };
+}
+
+function buildEvents<T>(matches: Piece<T>[]) {
+  return {
+    effects: [
+      {
+        kind: "Match",
+        match: {
+          matched: matches[0].value,
+          positions: matches.map((piece) => piece.pos),
+        },
+      },
+    ],
+    matches: matches,
+  };
+}
+
+function clearBoard<T>(
+  board: Board<T>,
+  generator: Generator<T>,
+  effects: Effect<T>[]
+) {
+  const rowsMatched = allRowsMatched(board);
+  const colsMatched = allColsMatched(board);
+
+  effects.push(...rowsMatched.effects);
+  effects.push(...colsMatched.effects);
+
+  if (rowsMatched.matches.length > 0 || colsMatched.matches.length > 0) {
+    rowsMatched.matches.forEach((match) => {
+      board.tiles.forEach((row) =>
+        row.forEach((item) => {
+          if (item.pos === match.pos) {
+            item.value = undefined;
+            match.value = undefined;
+          }
+        })
+      );
+    });
+    colsMatched.matches.forEach((match) => {
+      board.tiles.forEach((row) =>
+        row.forEach((item) => {
+          if (item.pos === match.pos) {
+            item.value = undefined;
+            match.value = undefined;
+          }
+        })
+      );
+    });
+
+    refillBoard(board, generator, effects);
+  }
+}
+
+function allRowsMatched<T>(board: Board<T>) {
+  let matches: Piece<T>[] = [];
+  let effects: Effect<T>[] = [];
+
+  for (let i = 0; i < board.height; i++) {
+    const checked: T[] = [];
+    const elements = board.tiles[i];
+
+    elements.forEach((element) => {
+      if (!checked.includes(element.value)) {
+        checked.push(element.value);
+        const res = buildEvents(matchesForRow(board, i, element.value));
+
+        matches = matches.concat(res.matches);
+        effects = effects.concat(res.effects);
+      }
+    });
+  }
+
+  return {
+    matches,
+    effects,
+  };
+}
+
+function allColsMatched<T>(board: Board<T>) {
+  let matches: Piece<T>[] = [];
+  let effects: Effect<T>[] = [];
+
+  for (let i = board.width - 1; i >= 0; i--) {
+    const checked: T[] = [];
+    const elements = board.tiles.map((row) => row[i]);
+
+    elements.forEach((element) => {
+      if (!checked.includes(element.value)) {
+        checked.push(element.value);
+        const res = buildEvents(matchesForCol(board, i, element.value));
+
+        matches = matches.concat(res.matches);
+        effects = effects.concat(res.effects);
+      }
+    });
+  }
+
+  return {
+    matches,
+    effects,
+  };
+}
+
+function refillBoard<T>(
+  board: Board<T>,
+  generator: Generator<T>,
+  effects: Effect<T>[]
+) {
+  board.tiles.forEach((row, rowIdx) => {
+    row.forEach((item, colIdx) => {
+      if (item.value === undefined) {
+        shiftColumn(board, rowIdx, colIdx);
+        item.value = generator.next();
+      }
+    });
+  });
+
+  effects.push({
+    kind: "Refill",
+    board,
+  });
+
+  clearBoard(board, generator, effects);
+}
+
+function shiftColumn<T>(board: Board<T>, rowIdx: number, colIdx: number) {
+  for (let row = rowIdx - 1; row >= 0; row--) {
+    swap(board, { row: row, col: colIdx }, { row: row - 1, col: colIdx });
+  }
 }
