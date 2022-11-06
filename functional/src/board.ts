@@ -1,32 +1,90 @@
-export type Generator<T>= { next:() => T } 
+export type Generator<T> = { next: () => T };
 
 export type Position = {
-    row: number,
-    col: number
-}    
+  row: number;
+  col: number;
+};
 
 export type Match<T> = {
-    matched: T,
-    positions: Position[]
-}    
+  matched: T;
+  positions: Position[];
+};
 
-export type Board<T> = ?;
+export type Board<T> = {
+  width: number;
+  height: number;
+  tiles: Piece<T>[][];
+};
 
-export type Effect<T> = ?;
+export type Effect<T> = {
+  kind: string;
+  board?: Board<T>;
+  match?: Match<T>;
+};
 
 export type MoveResult<T> = {
-    board: Board<T>,
-    effects: Effect<T>[]
-}    
+  board: Board<T>;
+  effects: Effect<T>[];
+};
 
-export function create<T>(generator: Generator<T>, width: number, height: number): Board<T> {
-}    
+type Piece<T> = {
+  value: T;
+  pos: Position;
+};
+
+export function create<T>(
+  generator: Generator<T>,
+  width: number,
+  height: number
+): Board<T> {
+  return {
+    width,
+    height,
+    tiles: fillBoard(generator, height, width),
+  };
+}
+
+function fillBoard<T>(generator: Generator<T>, width: number, height: number) {
+  return [...Array(height)].map((_, row) =>
+    [...Array(width)].map((_, col) => ({
+      value: generator.next(),
+      pos: {
+        row,
+        col,
+      },
+    }))
+  );
+}
 
 export function piece<T>(board: Board<T>, p: Position): T | undefined {
-}    
+  if (isValidPos(board, p)) {
+    return board.tiles[p.row][p.col].value;
+  }
 
-export function canMove<T>(board: Board<T>, first: Position, second: Position): boolean {
+  return undefined;
 }
 
-export function move<T>(generator: Generator<T>, board: Board<T>, first: Position, second: Position): MoveResult<T> {
+function isValidPos<T>(board: Board<T>, p: Position) {
+  if (p.col < 0 || p.row < 0) {
+    return false;
+  }
+
+  if (p.col >= board.width || p.row >= board.height) {
+    return false;
+  }
+
+  return true;
 }
+
+export function canMove<T>(
+  board: Board<T>,
+  first: Position,
+  second: Position
+): boolean {}
+
+export function move<T>(
+  generator: Generator<T>,
+  board: Board<T>,
+  first: Position,
+  second: Position
+): MoveResult<T> {}
