@@ -145,12 +145,7 @@ function verifyVertical<T>(board: Board<T>, first: Position, second: Position) {
     secondRowMatches,
   ];
 
-  if (
-    colMatches.length >= 3 ||
-    colMatchesSecondPiece.length >= 3 ||
-    firstRowMatches.length >= 3 ||
-    secondRowMatches.length >= 3
-  ) {
+  if (matches.some((item) => item.length >= 3)) {
     return {
       valid: true,
       matches: matches,
@@ -187,12 +182,7 @@ function verifyHorizontal<T>(
     secondColMatches,
   ];
 
-  if (
-    rowMatches.length >= 3 ||
-    rowMatchesSecondPiece.length >= 3 ||
-    firstColMatches.length >= 3 ||
-    secondColMatches.length >= 3
-  ) {
+  if (matches.some((item) => item.length >= 3)) {
     return {
       valid: true,
       matches: matches,
@@ -293,8 +283,7 @@ function clearBoard<T>(
   const rowsMatched = allRowsMatched(board);
   const colsMatched = allColsMatched(board);
 
-  effects.push(...rowsMatched.effects);
-  effects.push(...colsMatched.effects);
+  effects.push(...rowsMatched.effects, ...colsMatched.effects);
 
   if (rowsMatched.matches.length > 0 || colsMatched.matches.length > 0) {
     rowsMatched.matches.forEach((match) => {
