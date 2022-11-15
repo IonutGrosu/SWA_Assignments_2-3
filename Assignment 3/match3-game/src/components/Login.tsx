@@ -1,43 +1,37 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-import { login, loginAsync } from "../features/authSlice";
+import { useState } from "react";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { getUserAsync, loginAsync, selectUser } from "../features/authSlice";
 
 const Register = () => {
-  const [name, setName] = useState("");
+  const [username, setName] = useState("");
   const [password, setPassword] = useState("");
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectUser);
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-
-    dispatch(
-      login({
-        username: name,
-        password: password,
-      })
+  const handleSubmit = () =>
+    dispatch(loginAsync({ username, password })).then(() =>
+      dispatch(getUserAsync({ id: currentUser.id, token: currentUser.token }))
     );
-    dispatch(loginAsync({ name, password }));
-    console.log("clicked");
-  };
 
   return (
     <div className="login">
-      <form className="loginForm" onSubmit={(e) => handleSubmit(e)}>
-        <input
-          type="name"
-          placeholder="Username"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit">Submit</button>
-      </form>
+      <input
+        type="name"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button type="submit" onClick={() => handleSubmit()}>
+        Submit
+      </button>
+      <div>{currentUser.username}</div>
     </div>
   );
 };

@@ -1,16 +1,59 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { RootState } from "../app/store";
+
+type User = {
+  username: string;
+  password: string;
+  id: number;
+  token: string;
+};
+
+type loginState = {
+  username: string;
+  password: string;
+};
+
+type fetchUserState = {
+  token: string;
+  id: number;
+};
+
+const initialUser: User = {
+  username: "",
+  password: "",
+  id: 0,
+  token: "",
+};
 
 export const loginAsync = createAsyncThunk(
-  "loginUser",
-  async (username, password) => {
-    const res = await fetch("localhost:9090/login", {
+  "user/login",
+  //this needs to be only one parameter for it to work (dumb)
+  async (state: loginState) => {
+    const res = await fetch("http://localhost:9090/login", {
       method: "post",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      // necessary since state will be of type state: { username, password } instead of {username, password}
+      body: JSON.stringify({ ...state }),
     });
+    return await res.json();
+  }
+);
+
+export const getUserAsync = createAsyncThunk(
+  "user/getUser",
+  async (state: fetchUserState) => {
+    const url = `http://localhost:9090/users/${state.id}?token=${state.token}`;
+    console.log(url);
+    const res = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
+
     return await res.json();
   }
 );
@@ -18,21 +61,44 @@ export const loginAsync = createAsyncThunk(
 export const userSlice = createSlice({
   name: "user",
   initialState: {
-    user: null,
+    user: initialUser,
   },
   reducers: {
-    login: (state, action) => {
-      state.user = action.payload;
-    },
     logout: (state) => {
-      state.user = null;
+      state.user = initialUser;
     },
   },
-  extraReducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginAsync.pending, (state) => {
+        console.info("loading...", state.user);
+      })
+      .addCase(loginAsync.fulfilled, (state, action) => {
+        const { token, userId } = action.payload;
+        state.user.token = token;
+        state.user.id = userId;
+        console.log("successful login", action.payload);
+      })
+      .addCase(loginAsync.rejected, (state) => {
+        console.error("error loggin in", state);
+      })
+      .addCase(getUserAsync.pending, () => {
+        console.info("fetching user...");
+      })
+      .addCase(getUserAsync.fulfilled, (state, action) => {
+        const { username, password } = action.payload;
+        state.user.username = username;
+        state.user.password = password;
+        console.log("got user", action.payload);
+      })
+      .addCase(getUserAsync.rejected, (_, action) => {
+        console.error("error fetching user", action);
+      });
+  },
 });
 
-export const { login, logout } = userSlice.actions;
+export const { logout } = userSlice.actions;
 
-export const selectUser = (state: any) => state.user.user;
+export const selectUser = (state: RootState) => state.user.user;
 
 export default userSlice.reducer;
