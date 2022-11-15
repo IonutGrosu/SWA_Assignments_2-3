@@ -18,6 +18,8 @@ type fetchUserState = {
   id: number;
 };
 
+type registerUserState = loginState;
+
 const initialUser: User = {
   username: "",
   password: "",
@@ -58,16 +60,40 @@ export const getUserAsync = createAsyncThunk(
   }
 );
 
+export const registerUserAsync = createAsyncThunk(
+  "user/registerUser",
+  async (state: registerUserState) => {
+    const res = await fetch("http://localhost:9090/users", {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      method: "post",
+      body: JSON.stringify({ ...state }),
+    });
+
+    return await res.json();
+  }
+);
+
+export const logoutUserAsync = createAsyncThunk(
+  "user/logoutUser",
+  async (token: string) => {
+    const url = `http://localhost:9090/logout?token=${token}`;
+    const res = await fetch(url, {
+      method: "post",
+    });
+
+    return res.status;
+  }
+);
+
 export const userSlice = createSlice({
   name: "user",
   initialState: {
     user: initialUser,
   },
-  reducers: {
-    logout: (state) => {
-      state.user = initialUser;
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(loginAsync.pending, (state) => {
@@ -79,8 +105,8 @@ export const userSlice = createSlice({
         state.user.id = userId;
         console.log("successful login", action.payload);
       })
-      .addCase(loginAsync.rejected, (state) => {
-        console.error("error loggin in", state);
+      .addCase(loginAsync.rejected, (_, action) => {
+        console.error("error loggin in", action);
       })
       .addCase(getUserAsync.pending, () => {
         console.info("fetching user...");
@@ -93,11 +119,28 @@ export const userSlice = createSlice({
       })
       .addCase(getUserAsync.rejected, (_, action) => {
         console.error("error fetching user", action);
+      })
+      .addCase(registerUserAsync.pending, () => {
+        console.info("registering user...");
+      })
+      .addCase(registerUserAsync.fulfilled, () => {
+        console.info("registered user successfully");
+      })
+      .addCase(registerUserAsync.rejected, (_, action) => {
+        console.error("error registering user", action);
+      })
+      .addCase(logoutUserAsync.pending, () => {
+        console.info("logging user out...");
+      })
+      .addCase(logoutUserAsync.fulfilled, (state) => {
+        state.user = initialUser;
+        console.log("logged out successfully");
+      })
+      .addCase(logoutUserAsync.rejected, (_, action) => {
+        console.error("error logging out", action);
       });
   },
 });
-
-export const { logout } = userSlice.actions;
 
 export const selectUser = (state: RootState) => state.user.user;
 
