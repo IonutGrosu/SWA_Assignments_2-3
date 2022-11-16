@@ -20,11 +20,24 @@ type fetchUserState = {
 
 type registerUserState = loginState;
 
+export enum fetchingState {
+  Idle,
+  Success,
+  Error,
+  Pending,
+}
+
 const initialUser: User = {
   username: "",
   password: "",
   id: 0,
   token: "",
+};
+
+const initialState = {
+  user: initialUser,
+  status: fetchingState.Idle,
+  error: "",
 };
 
 export const loginAsync = createAsyncThunk(
@@ -90,58 +103,72 @@ export const logoutUserAsync = createAsyncThunk(
 
 export const userSlice = createSlice({
   name: "user",
-  initialState: {
-    user: initialUser,
-  },
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(loginAsync.pending, (state) => {
+        state.status = fetchingState.Pending;
         console.info("loading...", state.user);
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
         const { token, userId } = action.payload;
+        state.status = fetchingState.Success;
         state.user.token = token;
         state.user.id = userId;
         console.log("successful login", action.payload);
       })
-      .addCase(loginAsync.rejected, (_, action) => {
+      .addCase(loginAsync.rejected, (state, action) => {
+        state.status = fetchingState.Error;
+        state.error = action.error.message ?? "";
         console.error("error loggin in", action);
       })
-      .addCase(getUserAsync.pending, () => {
+      .addCase(getUserAsync.pending, (state) => {
+        state.status = fetchingState.Pending;
         console.info("fetching user...");
       })
       .addCase(getUserAsync.fulfilled, (state, action) => {
         const { username, password } = action.payload;
+        state.status = fetchingState.Success;
         state.user.username = username;
         state.user.password = password;
         console.log("got user", action.payload);
       })
-      .addCase(getUserAsync.rejected, (_, action) => {
+      .addCase(getUserAsync.rejected, (state, action) => {
+        state.status = fetchingState.Error;
+        state.error = action.error.message ?? "";
         console.error("error fetching user", action);
       })
-      .addCase(registerUserAsync.pending, () => {
+      .addCase(registerUserAsync.pending, (state) => {
+        state.status = fetchingState.Pending;
         console.info("registering user...");
       })
-      .addCase(registerUserAsync.fulfilled, () => {
+      .addCase(registerUserAsync.fulfilled, (state) => {
+        state.status = fetchingState.Success;
         console.info("registered user successfully");
       })
-      .addCase(registerUserAsync.rejected, (_, action) => {
+      .addCase(registerUserAsync.rejected, (state, action) => {
+        state.status = fetchingState.Error;
+        state.error = action.error.message ?? "";
         console.error("error registering user", action);
       })
-      .addCase(logoutUserAsync.pending, () => {
+      .addCase(logoutUserAsync.pending, (state) => {
+        state.status = fetchingState.Pending;
         console.info("logging user out...");
       })
       .addCase(logoutUserAsync.fulfilled, (state) => {
+        state.status = fetchingState.Success;
         state.user = initialUser;
         console.log("logged out successfully");
       })
-      .addCase(logoutUserAsync.rejected, (_, action) => {
+      .addCase(logoutUserAsync.rejected, (state, action) => {
+        state.status = fetchingState.Error;
+        state.error = action.error.message ?? "";
         console.error("error logging out", action);
       });
   },
 });
 
-export const selectUser = (state: RootState) => state.user.user;
+export const selectUser = (state: RootState) => state.user;
 
 export default userSlice.reducer;

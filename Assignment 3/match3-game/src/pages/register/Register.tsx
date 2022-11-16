@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAppDispatch } from "../app/hooks";
-import { registerUserAsync } from "../features/authSlice";
+import { useAppDispatch } from "../../app/hooks";
+import { registerUserAsync } from "../../features/authSlice";
 
 export const Register = () => {
   const [username, setName] = useState("");
