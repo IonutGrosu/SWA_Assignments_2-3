@@ -1,10 +1,16 @@
 {
   "users": [
-    { 
+    {
       "username": "admin",
       "password": "secret",
-      "id" : 0,
-      "admin": true 
+      "id": 0,
+      "admin": true
+    },
+    {
+      "username": "ionut",
+      "password": "ionut",
+      "id": 1,
+      "admin": false
     }
   ],
   "games": []

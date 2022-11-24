@@ -68,3 +68,11 @@ button:active {
   height: 100vh;
   box-sizing: border-box;
 }
+
+.gameDiv {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  width: 50vw;
+}
