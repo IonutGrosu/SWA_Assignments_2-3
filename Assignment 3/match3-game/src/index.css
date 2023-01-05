@@ -1,78 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Paytone+One&display=swap");
-
-:root {
-  --bg: #6c4ab6;
-  --bg-secondary: #8d72e1;
-  --default: #8d9eff;
-  --highlight: #b9e0ff;
-  --border-radius: 8px;
-  --lg-font: 20px;
-  --xl-font: 32px;
-  --padding: 8px 16px;
-  --box-shadow: 4px 4px var(--highlight);
+html {
+  height: 100%;
 }
 
 body {
   margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: white;
-  background-color: var(--bg);
-}
-
-* {
-  font-family: "Paytone One", sans-serif;
+  height: 100%;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
-}
-
-input {
-  background-color: var(--bg-secondary);
-  border: none;
-  padding: var(--padding);
-  color: white;
-  border-radius: var(--border-radius);
-  font-size: var(--xl-font);
-  box-shadow: var(--box-shadow);
-  margin-bottom: 16px;
-}
-
-input:focus {
-  outline: none;
-}
-
-button {
-  border-radius: var(--border-radius);
-  background-color: var(--default);
-  border: none;
-  padding: var(--padding);
-  font-size: var(--xl-font);
-  box-shadow: var(--box-shadow);
-  cursor: pointer;
-}
-
-button:active {
-  margin-top: 2px;
-}
-
-.error {
-  color: tomato;
-  padding: var(--padding);
-}
-
-#root {
-  width: 100vw;
-  height: 100vh;
-  box-sizing: border-box;
-}
-
-.gameDiv {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 50vh;
-  width: 50vw;
 }
