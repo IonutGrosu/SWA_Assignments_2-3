@@ -60,6 +60,14 @@ export function piece<T>(board: Board<T>, p: Position): T | undefined {
   return undefined;
 }
 
+function pieceAt<T>(board: Board<T>, p: Position): Piece<T> | undefined {
+  if (isValidPos(board, p)) {
+    return board.tiles[p.row][p.col];
+  }
+
+  return undefined;
+}
+
 function isValidPos<T>(board: Board<T>, p: Position): boolean {
   if (p.col < 0 || p.row < 0) {
     return false;
@@ -283,30 +291,23 @@ function clearBoard<T>(
   const rowsMatched = allRowsMatched(board);
   const colsMatched = allColsMatched(board);
 
-  effects.push(...rowsMatched.effects, ...colsMatched.effects);
+  effects.push(...rowsMatched.effects);
+  effects.push(...colsMatched.effects);
 
   if (rowsMatched.matches.length > 0 || colsMatched.matches.length > 0) {
-    rowsMatched.matches.forEach((match) => {
-      board.tiles.forEach((row) =>
-        row.forEach((item) => {
-          if (item.pos === match.pos) {
-            item.value = undefined;
-            match.value = undefined;
-          }
-        })
-      );
-    });
-    colsMatched.matches.forEach((match) => {
-      board.tiles.forEach((row) =>
-        row.forEach((item) => {
-          if (item.pos === match.pos) {
-            item.value = undefined;
-            match.value = undefined;
-          }
-        })
-      );
-    });
+    for (let row = 0; row < board.height; row++) {
+      for (let col = 0; col < board.height; col++) {
+        let piece = pieceAt(board, { row, col });
+        if (
+          rowsMatched.matches.includes(piece) ||
+          colsMatched.matches.includes(piece)
+        ) {
+          piece.value = undefined;
+        }
+      }
+    }
 
+    console.log("board before after clear", ...board.tiles.entries());
     refillBoard(board, generator, effects);
   }
 }
@@ -324,8 +325,8 @@ function allRowsMatched<T>(board: Board<T>) {
         checked.push(element.value);
         const res = buildEvents(matchesForRow(board, i, element.value));
 
-        matches = matches.concat(res.matches);
-        effects = effects.concat(res.effects);
+        matches.push(...res.matches);
+        effects.push(...res.effects);
       }
     });
   }
@@ -349,8 +350,8 @@ function allColsMatched<T>(board: Board<T>) {
         checked.push(element.value);
         const res = buildEvents(matchesForCol(board, i, element.value));
 
-        matches = matches.concat(res.matches);
-        effects = effects.concat(res.effects);
+        matches.push(...res.matches);
+        effects.push(...res.effects);
       }
     });
   }
@@ -366,25 +367,34 @@ function refillBoard<T>(
   generator: Generator<T>,
   effects: Effect<T>[]
 ) {
-  board.tiles.forEach((row, rowIdx) => {
-    row.forEach((item, colIdx) => {
-      if (item.value === undefined) {
-        shiftColumn(board, rowIdx, colIdx);
-        item.value = generator.next();
+  for (let row = 0; row < board.height - 1; row++) {
+    for (let col = 0; col < board.width; col++) {
+      const p = pieceAt(board, { row, col });
+      if (p.value === undefined) {
+        p.value = generator.next();
+      } else {
+        movePieceDown(board, row, col);
       }
-    });
-  });
+    }
+  }
 
   effects.push({
     kind: "Refill",
     board,
   });
 
+  console.log("board after refill", ...board.tiles.entries());
   clearBoard(board, generator, effects);
 }
 
-function shiftColumn<T>(board: Board<T>, rowIdx: number, colIdx: number) {
-  for (let row = rowIdx - 1; row >= 0; row--) {
-    swap(board, { row: row, col: colIdx }, { row: row - 1, col: colIdx });
+function movePieceDown<T>(board: Board<T>, fromRow: number, col: number) {
+  for (let row = fromRow; row < board.height - 1; row++) {
+    let currentTile = pieceAt(board, { row, col });
+    let nextTileUnder = pieceAt(board, { row: row + 1, col });
+    if (currentTile.value !== undefined && nextTileUnder.value === undefined) {
+      let temp = currentTile;
+      currentTile = nextTileUnder;
+      nextTileUnder = temp;
+    }
   }
 }
